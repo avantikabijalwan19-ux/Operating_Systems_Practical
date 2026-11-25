@@ -1,4 +1,4 @@
-# Operating Systems Lab Practicals (C Implementation)
+# Operating Systems Lab Practicals 
 
 A comprehensive, modular, and educational repository of all core **Operating Systems Practicals** implemented in clean, standard C. This repository covers CPU scheduling algorithms, classic synchronization problems (inter-process communication), and process creation.
 
