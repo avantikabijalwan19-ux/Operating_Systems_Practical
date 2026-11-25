@@ -1,6 +1,6 @@
-# Operating Systems Lab Practicals (Python Implementation)
+# Operating Systems Lab Practicals (C Implementation)
 
-A comprehensive, modular, and educational repository of all core **Operating Systems Practicals** implemented in clean, idiomatic Python 3. This repository covers CPU scheduling algorithms, classic synchronization problems (inter-process communication), and process creation.
+A comprehensive, modular, and educational repository of all core **Operating Systems Practicals** implemented in clean, standard C. This repository covers CPU scheduling algorithms, classic synchronization problems (inter-process communication), and process creation.
 
 ---
 
@@ -20,7 +20,7 @@ A comprehensive, modular, and educational repository of all core **Operating Sys
    - [Practical 9: Dining Philosophers Problem](#practical-9-dining-philosophers-problem)
    - [Practical 10: Readers-Writers Problem](#practical-10-readers-writers-problem)
    - [Practical 11: Process Creation & Fork Simulation](#practical-11-process-creation--fork-simulation)
-5. [How to Run](#how-to-run)
+5. [How to Compile & Run](#how-to-compile--run)
 6. [Requirements & Platform Compatibility](#requirements--platform-compatibility)
 
 ---
@@ -32,8 +32,8 @@ This lab suite is structured into two major domains:
    - Evaluates performance criteria including Turnaround Time (TAT), Waiting Time (WT), and CPU utilization across preemptive and non-preemptive strategies.
    - Includes real-time ASCII Gantt chart generation.
 2. **Process Synchronization & IPC:**
-   - Demonstrates mutual exclusion, deadlock avoidance, and thread synchronization using Python's `threading.Semaphore` and `threading.Lock`.
-   - Explores process creation, address space isolation, and process hierarchy.
+   - Demonstrates mutual exclusion, deadlock avoidance, and thread synchronization using POSIX semaphores (`sem_t`) and mutexes (`pthread_mutex_t`).
+   - Explores process creation, address space isolation, and process hierarchy (`fork()` on POSIX / `CreateProcess()` on Windows).
 
 ---
 
@@ -41,17 +41,17 @@ This lab suite is structured into two major domains:
 
 | File Name | Topic | Description |
 |---|---|---|
-| `fcfs.py` | CPU Scheduling | Non-preemptive scheduling based strictly on arrival time order. |
-| `sjf_non_preemptive.py` | CPU Scheduling | Selects the process with the shortest burst time among arrived processes. |
-| `srtf_preemptive.py` | CPU Scheduling | Preempts running processes if a newly arrived process has less remaining time. |
-| `priority_non_preemptive.py` | CPU Scheduling | Prioritizes processes based on assigned priority integers (lower = higher priority). |
-| `priority_preemptive.py` | CPU Scheduling | Preempts the CPU immediately if a process with strictly higher priority arrives. |
-| `round_robin.py` | CPU Scheduling | Dispatches processes in a cyclic ready queue with a fixed Time Quantum (TQ). |
-| `cpu_scheduling_menu.py` | Dashboard | Menu-driven console app that compares all 6 algorithms side-by-side. |
-| `producer_consumer.py` | Synchronization | Bounded buffer coordination using `empty`, `full`, and `mutex` semaphores. |
-| `dining_philosophers.py` | Synchronization | Resolves the 5-philosopher dining dilemma and avoids deadlocks via room semaphore. |
-| `readers_writers.py` | Synchronization | Reader-preference synchronization allowing multiple concurrent readers. |
-| `fork_simulation.py` | Process Management | Demonstrates parent/child process creation, PID tracking, and memory isolation. |
+| `fcfs.c` | CPU Scheduling | Non-preemptive scheduling based strictly on arrival time order. |
+| `sjf_non_preemptive.c` | CPU Scheduling | Selects the process with the shortest burst time among arrived processes. |
+| `srtf_preemptive.c` | CPU Scheduling | Preempts running processes if a newly arrived process has less remaining time. |
+| `priority_non_preemptive.c` | CPU Scheduling | Prioritizes processes based on assigned priority integers (lower = higher priority). |
+| `priority_preemptive.c` | CPU Scheduling | Preempts the CPU immediately if a process with strictly higher priority arrives. |
+| `round_robin.c` | CPU Scheduling | Dispatches processes in a cyclic ready queue with a fixed Time Quantum (TQ). |
+| `cpu_scheduling_menu.c` | Dashboard | Menu-driven console app that compares all 6 algorithms side-by-side. |
+| `producer_consumer.c` | Synchronization | Bounded buffer coordination using `empty_slots`, `full_slots`, and `mutex`. |
+| `dining_philosophers.c` | Synchronization | Resolves the 5-philosopher dining dilemma and avoids deadlocks via room semaphore. |
+| `readers_writers.c` | Synchronization | Reader-preference synchronization allowing multiple concurrent readers. |
+| `fork_simulation.c` | Process Management | Demonstrates parent/child process creation, PID tracking, and memory isolation. |
 
 ---
 
@@ -91,10 +91,10 @@ For any process $P_i$:
 
 ### Practical 6: Round Robin Scheduling (RR)
 - **Concept:** Fair-share preemptive scheduling. Each process receives a slice of time called the **Time Quantum (TQ)**.
-- **Mechanism:** Maintained via a FIFO ready queue (`collections.deque`). If a process doesn't finish within the quantum, it is appended to the back of the queue.
+- **Mechanism:** Maintained via a circular FIFO ready queue. If a process doesn't finish within the quantum, it is appended to the back of the queue.
 
 ### Practical 7: Unified Menu & Comparative Benchmark
-- **File:** `cpu_scheduling_menu.py`
+- **File:** `cpu_scheduling_menu.c`
 - **Feature:** Runs any individual algorithm or tests all 6 algorithms against the exact same dataset to directly contrast their Average TAT and Average WT.
 
 ---
@@ -102,9 +102,9 @@ For any process $P_i$:
 ### Practical 8: Producer-Consumer Problem
 - **Concept:** One producer thread places items into a finite buffer of capacity $N$. One consumer thread retrieves items.
 - **Semaphores Used:**
-  - `empty_slots = Semaphore(N)`: Tracks free slots.
-  - `full_slots = Semaphore(0)`: Tracks occupied slots.
-  - `mutex = Lock()`: Ensures mutual exclusion while altering buffer pointers.
+  - `empty_slots` (initialized to $N$): Tracks free slots.
+  - `full_slots` (initialized to $0$): Tracks occupied slots.
+  - `mutex` (`pthread_mutex_t`): Ensures mutual exclusion while altering buffer indices.
 
 ### Practical 9: Dining Philosophers Problem
 - **Concept:** 5 philosophers sit at a round table with 5 shared forks. Eating requires holding both left and right forks.
@@ -112,43 +112,44 @@ For any process $P_i$:
 
 ### Practical 10: Readers-Writers Problem
 - **Concept:** Readers only read (concurrent access allowed). Writers modify data (exclusive access required).
-- **Solution:** A `read_count` variable tracks active readers. The first reader acquires the writer lock `wrt`, and the last reader releases `wrt`.
+- **Solution:** A `read_count` variable tracks active readers. The first reader acquires the writer semaphore `wrt`, and the last reader posts `wrt`.
 
 ### Practical 11: Process Creation & Fork Simulation
-- **Concept:** Shows process creation, independent PID assignment (`os.getpid()`, `os.getppid()`), and memory isolation.
-- **Cross-Platform Support:** Works smoothly on Windows (via `multiprocessing`) and UNIX (via native `os.fork()`).
+- **Concept:** Shows process creation, independent PID assignment (`getpid()`, `getppid()`), and memory isolation.
+- **Cross-Platform Support:** Uses native `fork()` on UNIX/Linux/macOS and `CreateProcess()` on Windows.
 
 ---
 
-## 🚀 How to Run
+## 🚀 How to Compile & Run
 
-Run any file directly using Python 3:
+Compile and run any file using `gcc`:
 
 ```bash
 # CPU Scheduling Practicals
-python fcfs.py
-python sjf_non_preemptive.py
-python srtf_preemptive.py
-python priority_non_preemptive.py
-python priority_preemptive.py
-python round_robin.py
+gcc fcfs.c -o fcfs && ./fcfs
+gcc sjf_non_preemptive.c -o sjf_non_preemptive && ./sjf_non_preemptive
+gcc srtf_preemptive.c -o srtf_preemptive && ./srtf_preemptive
+gcc priority_non_preemptive.c -o priority_non_preemptive && ./priority_non_preemptive
+gcc priority_preemptive.c -o priority_preemptive && ./priority_preemptive
+gcc round_robin.c -o round_robin && ./round_robin
 
 # Comparative Menu Dashboard
-python cpu_scheduling_menu.py
+gcc cpu_scheduling_menu.c -o cpu_scheduling_menu && ./cpu_scheduling_menu
 
-# Process Synchronization Practicals
-python producer_consumer.py
-python dining_philosophers.py
-python readers_writers.py
-python fork_simulation.py
+# Process Synchronization Practicals (link with -lpthread)
+gcc producer_consumer.c -o producer_consumer -lpthread && ./producer_consumer
+gcc dining_philosophers.c -o dining_philosophers -lpthread && ./dining_philosophers
+gcc readers_writers.c -o readers_writers -lpthread && ./readers_writers
+
+# Process Creation & Fork Simulation
+gcc fork_simulation.c -o fork_simulation && ./fork_simulation
 ```
 
-*Every script includes pre-configured sample inputs so you can simply press Enter to execute!*
+*Every CPU scheduling program includes pre-configured sample inputs so you can simply press Enter to execute!*
 
 ---
 
 ## ⚙️ Requirements & Platform Compatibility
-- **Python Version:** Python 3.8+ (tested on Python 3.10)
-- **Operating System:** Windows, Linux, or macOS.
-- **Dependencies:** **Zero external packages required** (Uses Python standard library: `threading`, `multiprocessing`, `collections`, `random`, `time`, `os`, `sys`).
-
+- **Compiler:** GCC or Clang supporting C99/C11.
+- **Operating System:** Linux, macOS, or Windows (MinGW-w64 / MSYS2 / WSL for POSIX threads & semaphores).
+- **Dependencies:** Standard C library (`stdio.h`, `stdlib.h`, `string.h`) and POSIX Threads (`pthread.h`, `semaphore.h`) for synchronization practicals.
